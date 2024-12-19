@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>oi!全是偷懒小工具</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <script src="https://unpkg.com/vue@2"></script>
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    #app {
+      display: flex;
+      flex: 1;
+      width: 100%;
+    }
+    .menu-container {
+      overflow: hidden;
+      transition: width 0.3s ease-in-out;
+    }
+    .menu-expanded {
+      width: 200px;
+    }
+    .menu-collapsed {
+      width: 60px;
+    }
+    .el-menu-vertical-demo {
+      min-height: 100vh;
+      border-right: 1px solid #dcdfe6;
+    }
+    .content-container {
+      flex: 1;
+      padding: 20px;
+      background-color: #f9f9f9;
+      overflow: auto;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background-color: #ffffff;
+    }
+    .menu-control {
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-bottom: 1px solid #dcdfe6;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 左侧导航栏 -->
+    <div :class="[isCollapse ? 'menu-collapsed' : 'menu-expanded']" class="menu-container">
+      <div class="menu-control">
+        <!-- 收起与展开按钮 -->
+        <el-radio-group v-model="isCollapse" size="mini">
+          <el-radio-button :label="false">展开</el-radio-button>
+          <el-radio-button :label="true">收起</el-radio-button>
+        </el-radio-group>
+      </div>
+      <!-- 导航菜单 -->
+      <el-menu
+        default-active="1"
+        class="el-menu-vertical-demo"
+        :collapse="isCollapse"
+      >
+        <!-- 导航一 -->
+        <el-menu-item index="1" @click="navigateTo('page1.html')">
+          <i class="el-icon-location"></i>
+          <span v-if="!isCollapse">界面渲染工具</span>
+        </el-menu-item>
+        <!-- 导航二 -->
+        <el-menu-item index="2" @click="navigateTo('page2.html')">
+          <i class="el-icon-menu"></i>
+          <span v-if="!isCollapse">对话解析工具</span>
+        </el-menu-item>
+        <!-- 导航三 -->
+        <el-menu-item index="3" @click="navigateTo('page3.html')">
+          <i class="el-icon-document"></i>
+          <span v-if="!isCollapse">数字高亮工具</span>
+        </el-menu-item>
+      </el-menu>
+    </div>
+
+    <!-- 右侧内容区 -->
+    <div class="content-container">
+      <iframe id="content-iframe" src=""></iframe>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          isCollapse: false // 控制菜单是否收起
+        };
+      },
+      methods: {
+        navigateTo(pageUrl) {
+          // 修改 iframe 的 src 属性以加载对应页面
+          document.getElementById('content-iframe').src = pageUrl;
+        }
+      },
+      mounted() {
+        // 默认加载的页面
+        document.getElementById('content-iframe').src = 'page1.html';
+      }
+    });
+  </script>
+</body>
+</html>
