@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量替换</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.13/lib/theme-chalk/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.13/lib/index.js"></script>
+    <style>
+        /* 全局设置：美化整个页面 */
+        body {
+            margin-left: 20px;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            user-select: none;
+            /* 禁止选择 */
+        }
+
+        /* 允许可交互区域（例如输入框、按钮等）被选择 */
+        input,
+        textarea,
+        button,
+        .el-input__inner,
+        .el-button {
+            user-select: text;
+            /* 允许文本选择 */
+        }
+
+        .upload-demo {
+            margin-left: 20px;
+        }
+
+        .el-upload-list__item {
+            width: 360px;
+            background-color: #f5f5f5;
+        }
+
+        /* 设置 label 和输入框之间的空隙 */
+        label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        /* 控制每行的对齐和间距 */
+        .el-row {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* 调整输入框样式 */
+        .el-input {
+            flex: 1;
+        }
+
+        /* 给整体容器添加一点上下间距 */
+        #columnsContainer {
+            margin-bottom: 20px;
+            margin-left: 20px
+        }
+
+        /* 调整按钮的样式 */
+        .el-button {
+            margin-top: 10px;
+        }
+
+        /* 设置容器的最大宽度，保持居中 */
+        .input-group {
+            margin-bottom: 20px;
+            /* 每个输入框的底部间距 */
+        }
+
+        .input-label {
+            font-weight: bold;
+            /* 加粗标签文本 */
+            margin-bottom: 8px;
+            /* 与输入框的间距 */
+            display: block;
+            /* 标签换行 */
+            font-size: 16px;
+            /* 标签文字大小 */
+
+        }
+
+        #findText,
+        #replaceText {
+            font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+        }
+
+        .custom-textarea {
+            width: 100%;
+            /* 输入框占满父级宽度 */
+            border-radius: 4px;
+            /* 输入框四角圆润 */
+        }
+
+        .custom-textarea .el-input__inner {
+            font-size: 14px;
+            /* 输入内容字体大小 */
+            color: #606266;
+            /* 输入框文字颜色 */
+            line-height: 1.6;
+            /* 行间距 */
+        }
+
+        h4 {
+            margin-left: 25px;
+            margin-bottom: 5px
+        }
+
+        .download-button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #409EFF;
+            border-radius: 4px;
+            text-decoration: none;
+            text-align: center;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-left: 300px;
+        }
+
+        .download-button:hover {
+            background-color: #66b1ff;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .download-button:active {
+            background-color: #3a8ee6;
+            box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.2);
+            transform: translateY(1px);
+        }
+
+        /* 提示文字样式 */
+        .file-name-hint {
+            font-size: 14px;
+            font-weight: bolder;
+            /* 设置提示文字的字体大小 */
+            color: #606266;
+            /* 设置提示文字的颜色 */
+            margin-bottom: 8px;
+            /* 和输入框的距离 */
+            user-select: none;
+            /* 禁止选中 */
+            pointer-events: none;
+            /* 禁止点击 */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h4>上传待处理文件</h4>
+        <!-- 上传CSV文件 -->
+        <el-upload class="upload-demo" drag action="" :auto-upload="false" :on-change="handleFileChange">
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+        </el-upload>
+        <br><br>
+
+        <!-- 动态添加列名输入框 -->
+        <div id="columnsContainer">
+            <el-row v-for="(column, index) in columnNames" :key="index">
+                <el-col :span="12">
+                    <label :for="'column-input-' + index">列名：</label>
+                    <el-input :id="'column-input-' + index" v-model="columnNames[index]" placeholder="请输入列名">
+                    </el-input>
+                </el-col>
+            </el-row>
+        </div>
+
+        <div style="margin-left: 20px; margin-top: 10px;">
+            <!-- 无法点击和选中的提示文字 -->
+            <p class="file-name-hint">请输入结果文件名（不需要输入文件扩展名）：</p>
+            <!-- 设置结果文件名输入框 -->
+            <el-input id="outputFileName" v-model="outputFileName" placeholder="请输入结果文件名" style="width: 300px;">
+            </el-input>
+            <br><br>
+            <!-- 操作按钮 -->
+            <el-button type="primary" @click="addColumnInput">添加匹配列</el-button>
+            <el-button type="danger" @click="removeColumnInput" :disabled="columnNames.length === 0">移除匹配列</el-button>
+            <a id="downloadLink" class="download-button" style="display: none;">下载处理后的CSV文件</a>
+        </div>
+
+        <br><br>
+
+        <div style="max-width: 800px; margin-left: 20px;">
+            <!-- 输入查找内容 -->
+            <div class="input-group">
+                <label for="findText" class="input-label">查找内容：</label>
+                <el-input type="textarea" id="findText" v-model="findText" placeholder="请输入要查找的内容" :rows="5"
+                    class="custom-textarea">
+                </el-input>
+            </div>
+
+            <!-- 输入替换内容 -->
+            <div class="input-group">
+                <label for="replaceText" class="input-label">替换为：</label>
+                <el-input type="textarea" id="replaceText" v-model="replaceText" placeholder="请输入替换为的内容" :rows="5"
+                    class="custom-textarea">
+                </el-input>
+            </div>
+        </div>
+
+        <!-- 执行替换 -->
+        <el-button style="margin-left: 20px;" type="success" @click="processCsv">替换</el-button>
+        <br><br>
+
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                uploadedFile: null, // 文件
+                columnNames: ['', ''], // 列名数组
+                findText: '', // 查找文本
+                replaceText: '', // 替换文本
+                outputFileName: 'processed' // 默认结果文件名
+            },
+            methods: {
+                handleFileChange(file) {
+                    this.uploadedFile = file.raw; // 处理上传的文件
+                },
+
+                addColumnInput() {
+                    // 添加一个新的列名输入框
+                    this.columnNames.push('');
+                },
+
+                removeColumnInput() {
+                    // 移除最后一个列名输入框
+                    if (this.columnNames.length > 0) {
+                        this.columnNames.pop();
+                    }
+                },
+
+                processCsv() {
+                    // 处理CSV替换逻辑（未变动）
+                    if (!this.uploadedFile) {
+                        alert('请上传CSV文件');
+                        return;
+                    }
+                    const findText = this.findText.trim();
+                    const replaceText = this.replaceText.trim();
+                    const columnNames = this.columnNames.map(name => name.trim()).filter(name => name);
+
+                    if (columnNames.length === 0) {
+                        alert('请至少输入一个列名！');
+                        return;
+                    }
+                    if (!findText) {
+                        alert('请输入查找内容！');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const csvContent = e.target.result;
+
+                        const parsedCsv = this.parseCsv(csvContent);
+                        const headers = parsedCsv[0];
+                        const rows = parsedCsv.slice(1);
+
+                        const columnIndices = columnNames.map(name => headers.indexOf(name));
+                        if (columnIndices.some(index => index === -1)) {
+                            alert('未找到以下列名：' + columnNames.filter((name, i) => columnIndices[i] === -1).join(', '));
+                            return;
+                        }
+
+                        const escapedFindText = this.escapeRegExp(findText);
+                        const regex = new RegExp(escapedFindText, 'g');
+
+                        const newRows = rows
+                            .filter(row => row.length > 0 && row.some(cell => cell.trim() !== ''))
+                            .map(row => {
+                                columnIndices.forEach(index => {
+                                    if (row[index] !== undefined) {
+                                        row[index] = row[index].replace(regex, replaceText);
+                                    }
+                                });
+                                return row;
+                            });
+
+                        const newCsvContent = [headers, ...newRows]
+                            .map(row => row.map(cell => {
+                                if (cell.includes('\n') || cell.includes(',') || cell.includes('"')) {
+                                    return `"${cell.replace(/"/g, '""')}"`;
+                                }
+                                return cell;
+                            }).join(','))
+                            .join('\r\n');
+
+                        this.downloadCsv(newCsvContent, 'processed.csv');
+                    };
+
+                    reader.readAsText(this.uploadedFile);
+                },
+
+                parseCsv(content) {
+                    // 解析CSV文件内容（未变动）
+                    const rows = [];
+                    let currentRow = [];
+                    let currentCell = '';
+                    let insideQuotes = false;
+
+                    for (let i = 0; i < content.length; i++) {
+                        const char = content[i];
+                        const nextChar = content[i + 1];
+
+                        if (char === '"') {
+                            if (insideQuotes && nextChar === '"') {
+                                currentCell += '"';
+                                i++;
+                            } else {
+                                insideQuotes = !insideQuotes;
+                            }
+                        } else if (char === ',' && !insideQuotes) {
+                            currentRow.push(currentCell);
+                            currentCell = '';
+                        } else if ((char === '\n' || char === '\r') && !insideQuotes) {
+                            if (char === '\r' && nextChar === '\n') i++;
+                            currentRow.push(currentCell);
+                            rows.push(currentRow);
+                            currentRow = [];
+                            currentCell = '';
+                        } else {
+                            currentCell += char;
+                        }
+                    }
+
+                    if (currentCell || currentRow.length > 0) {
+                        currentRow.push(currentCell);
+                        rows.push(currentRow);
+                    }
+
+                    return rows.filter(row => row.length > 0 && row.some(cell => cell.trim() !== ''));
+                },
+
+                escapeRegExp(string) {
+                    // 转义正则表达式中的特殊字符
+                    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                },
+
+                downloadCsv(csvContent, defaultFileName) {
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.getElementById('downloadLink');
+
+                    // 动态设置文件名
+                    const fileName = this.outputFileName.trim() || defaultFileName;
+
+                    link.href = URL.createObjectURL(blob);
+                    link.download = fileName + '.csv';
+                    link.style.display = 'inline';
+                    link.textContent = `点击下载结果文件：${fileName}.csv`;
+                }
+            }
+        });
+    </script>
+</body>
+
+
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单文本替换</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.13/lib/theme-chalk/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.13/lib/index.js"></script>
+    <style>
+        body {
+            margin: 20px;
+            line-height: 1.6;
+            user-select: none;
+            font-family: 'Arial', sans-serif;
+            /* 页面整体字体 */
+        }
+
+        input,
+        textarea,
+        button,
+        .el-input__inner,
+        .el-button {
+            user-select: text;
+        }
+
+        .el-row {
+            margin-bottom: 20px;
+        }
+
+        label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .custom-textarea {
+            width: 100%;
+            border-radius: 4px;
+        }
+
+        .custom-textarea .el-input__inner {
+            font-size: 14px;
+            color: #606266;
+            line-height: 1.6;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .el-button {
+            margin-right: 15px;
+        }
+
+        h4 {
+            margin-bottom: 15px;
+        }
+
+        #resultContainer {
+            margin-top: 30px;
+        }
+
+        .result-label {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        #replaceText,
+        #findText,
+        #inputText {
+            font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+            /* 修改结果输出框字体 */
+        }
+
+        .auto-resize-textarea {
+            height: auto;
+            overflow: hidden;
+            resize: none;
+            line-height: 1.6;
+            font-size: 14px;
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+            /* 修改结果输出框字体 */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h4>输入需要处理的文本</h4>
+
+        <!-- 输入原始文本 -->
+        <div class="input-group">
+            <label for="inputText" class="input-label">原始文本：</label>
+            <el-input type="textarea" id="inputText" v-model="inputText" placeholder="请输入需要处理的文本" :rows="10"
+                class="custom-textarea">
+            </el-input>
+        </div>
+
+        <!-- 输入查找内容 -->
+        <div class="input-group">
+            <label for="findText" class="input-label">查找内容：</label>
+            <el-input type="textarea" id="findText" v-model="findText" placeholder="请输入要查找的内容" :rows="4"
+                class="custom-textarea">
+            </el-input>
+        </div>
+
+        <!-- 输入替换内容 -->
+        <div class="input-group">
+            <label for="replaceText" class="input-label">替换为：</label>
+            <el-input type="textarea" id="replaceText" v-model="replaceText" placeholder="请输入替换为的内容" :rows="4"
+                class="custom-textarea">
+            </el-input>
+        </div>
+
+        <!-- 替换和复制按钮 -->
+        <el-button type="success" @click="processText">替换</el-button>
+        <el-button type="primary" @click="copyToClipboard">复制结果</el-button>
+
+        <!-- 替换后的结果 -->
+        <div id="resultContainer">
+            <label class="result-label">替换后文本：</label>
+            <textarea class="auto-resize-textarea" v-model="resultText" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                inputText: '', // 原始输入文本
+                findText: '', // 查找的内容
+                replaceText: '', // 替换的内容
+                resultText: '' // 替换后的文本
+            },
+            methods: {
+                processText() {
+                    // 检查输入内容是否完整
+                    if (!this.inputText.trim()) {
+                        alert('请输入需要处理的文本！');
+                        return;
+                    }
+
+                    if (!this.findText.trim()) {
+                        alert('请输入要查找的内容！');
+                        return;
+                    }
+
+                    // 转义正则表达式中的特殊字符
+                    const escapedFindText = this.escapeRegExp(this.findText.trim());
+                    const regex = new RegExp(escapedFindText, 'g'); // 全局替换
+
+                    // 执行替换操作
+                    this.resultText = this.inputText.replace(regex, this.replaceText.trim());
+
+                    // 调整高度（手动触发自适应）
+                    this.$nextTick(this.adjustTextareaHeight);
+                },
+
+                escapeRegExp(string) {
+                    // 转义正则表达式中的特殊字符
+                    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                },
+
+                adjustTextareaHeight() {
+                    const textarea = document.querySelector('.auto-resize-textarea');
+                    if (textarea) {
+                        textarea.style.height = 'auto'; // 重置高度
+                        textarea.style.height = textarea.scrollHeight + 'px'; // 根据内容动态设置高度
+                    }
+                },
+
+                copyToClipboard() {
+                    // 将结果文本复制到剪贴板
+                    if (!this.resultText) {
+                        this.$message.warning('结果文本为空，无法复制！');
+                        return;
+                    }
+
+                    navigator.clipboard.writeText(this.resultText)
+                        .then(() => {
+                            this.$message.success('复制成功！');
+                        })
+                        .catch(() => {
+                            this.$message.error('复制失败！请手动复制内容。');
+                        });
+                }
+            },
+            mounted() {
+                this.$nextTick(this.adjustTextareaHeight);
+            }
+        });
+    </script>
+</body>
+
+</html>
