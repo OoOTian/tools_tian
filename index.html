@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +10,8 @@
   <script src="https://unpkg.com/vue@2"></script>
   <script src="https://unpkg.com/element-ui/lib/index.js"></script>
   <style>
-    body, html {
+    body,
+    html {
       margin: 0;
       padding: 0;
       width: 100%;
@@ -17,37 +19,45 @@
       display: flex;
       flex-direction: column;
     }
+
     #app {
       display: flex;
       flex: 1;
       width: 100%;
     }
+
     .menu-container {
       overflow: hidden;
       transition: width 0.3s ease-in-out;
     }
+
     .menu-expanded {
       width: 200px;
     }
+
     .menu-collapsed {
       width: 60px;
     }
+
     .el-menu-vertical-demo {
       min-height: 100vh;
       border-right: 1px solid #dcdfe6;
     }
+
     .content-container {
       flex: 1;
       padding: 20px;
       background-color: #f9f9f9;
       overflow: auto;
     }
+
     iframe {
       width: 100%;
       height: 100%;
       border: none;
       background-color: #ffffff;
     }
+
     .menu-control {
       padding: 10px;
       background-color: #f9f9f9;
@@ -55,6 +65,7 @@
     }
   </style>
 </head>
+
 <body>
   <div id="app">
     <!-- 左侧导航栏 -->
@@ -67,11 +78,7 @@
         </el-radio-group>
       </div>
       <!-- 导航菜单 -->
-      <el-menu
-        default-active="1"
-        class="el-menu-vertical-demo"
-        :collapse="isCollapse"
-      >
+      <el-menu default-active="1" class="el-menu-vertical-demo" :collapse="isCollapse">
         <!-- 导航一 -->
         <el-menu-item index="1" @click="navigateTo('page1.html')">
           <i class="el-icon-view"></i>
@@ -91,6 +98,15 @@
           <i class="el-icon-setting"></i>
           <span v-if="!isCollapse">Json纠正工具</span>
         </el-menu-item>
+        <el-submenu index="5">
+          <template slot="title">
+            <i class="el-icon-tickets"></i>
+            <span>多行文本替换工具</span>
+          </template>
+            <el-menu-item index="5-1" @click="navigateTo('page4.html')">批量替换</el-menu-item>
+            <el-menu-item index="5-2" @click="navigateTo('page5.html')">单文本替换</el-menu-item>
+          </el-submenu>
+        </el-submenu>
       </el-menu>
     </div>
 
@@ -121,4 +137,5 @@
     });
   </script>
 </body>
+
 </html>
