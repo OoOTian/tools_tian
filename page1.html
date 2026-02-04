@@ -12,7 +12,6 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            /* 从顶部开始布局 */
             height: 100vh;
             margin-top: 20px;
             margin-left: -40px;
@@ -24,21 +23,17 @@
         .checkbox-container {
             width: 100%;
             max-width: 90%;
-            /* 限制容器宽度为窗口的 90% */
             margin-bottom: 20px;
         }
 
         textarea {
             width: 100%;
-            /* 宽度自动适应父容器 */
             height: 50vh;
-            /* 高度为视窗高度的 50% */
             font-size: 16px;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             resize: vertical;
-            /* 允许用户调整垂直高度 */
             box-sizing: border-box;
         }
 
@@ -82,7 +77,7 @@
     </div>
     <div class="checkbox-container">
         <label>
-            <input type="checkbox" id="defaultHighlight" checked> 默认开启高亮模式
+            <input type="checkbox" id="defaultHighlight"> 开启高亮模式
         </label>
     </div>
     <div class="input-container">
@@ -117,7 +112,7 @@
                                 z-index: 1000;
                                 padding: 10px 0;
                                 box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                                user-select: none; /* 禁止选择 */
+                                user-select: none;
                             }
                             .fixed-header button {
                                 margin-left: 20px;
@@ -161,9 +156,16 @@
                             }
                             .highlight-warning {
                                 color: orange;
-                                display: none; /* 默认隐藏 */
+                                display: none;
                                 margin-left: 20px;
                                 font-weight: bold;
+                            }
+                            /* 📌 字数统计样式，和其他元素协调 */
+                            .word-count {
+                                margin-left: 20px;
+                                font-weight: bold;
+                                color: #333;
+                                font-size: 16px;
                             }
                         </style>
                     </head>
@@ -174,6 +176,8 @@
                             <button class="highlight-button" id="undoButton" disabled>撤销高亮</button>
                             <button class="refresh-button" id="refreshButton">重新加载</button>
                             <div class="highlight-warning" id="highlightWarning">为了避免渲染时出现多余换行符/空格符，请避免多行划取。</div>
+                            <!-- 📌 字数统计显示元素 -->
+                            <span class="word-count" id="wordCount">有效字符数：0</span>
                         </div>
                         <div class="content" id="contentArea">
                             <div style="overflow-x:auto;">${input}</div>
@@ -187,12 +191,32 @@
 
                                 document.getElementById('highlightStatus').innerText = highlightMode ? '高亮模式：开启' : '高亮模式：关闭';
                                 const highlightWarning = document.getElementById('highlightWarning');
+                                // 📌 获取字数统计元素
+                                const wordCountEl = document.getElementById('wordCount');
 
                                 function updateHighlightWarning() {
                                     highlightWarning.style.display = highlightMode ? 'block' : 'none';
                                 }
 
-                                updateHighlightWarning(); // 初始更新
+                                // 📌 核心修正：统计有效字符（仅中/英/数/标点，剔除所有空白）
+                                function getValidWordCount() {
+                                    // 1. 获取渲染区纯文本（自动过滤HTML标签，只取显示的文字）
+                                    const contentText = document.getElementById('contentArea').textContent;
+                                    // 2. 剔除所有空白字符：空格、换行、制表符、回车等（\s匹配所有空白）
+                                    const noBlankText = contentText.replace(/\\s+/g, '');
+                                    // 3. 剩余长度就是有效字符数（中/英/数/标点）
+                                    return noBlankText.length;
+                                }
+
+                                // 📌 更新字数显示（把标题改成“有效字符数”更贴合实际）
+                                function updateWordCount() {
+                                    const validCount = getValidWordCount();
+                                    wordCountEl.innerText = \`有效字符数：\${validCount}\`;
+                                }
+
+                                updateHighlightWarning(); 
+                                // 📌 初始加载时执行一次统计
+                                updateWordCount();
 
                                 function handleMouseUp() {
                                     if (highlightMode) {
@@ -224,6 +248,8 @@
                                                 range.insertNode(span);
                                                 highlightHistory.push(span);
                                                 document.getElementById('undoButton').disabled = false;
+                                                // 📌 高亮后更新有效字数
+                                                updateWordCount();
                                             }
 
                                             selection.removeAllRanges();
@@ -234,7 +260,7 @@
                                 document.getElementById('toggleHighlightButton').addEventListener('click', function() {
                                     highlightMode = !highlightMode;
                                     document.getElementById('highlightStatus').innerText = highlightMode ? '高亮模式：开启' : '高亮模式：关闭';
-                                    updateHighlightWarning(); // 更新提示信息
+                                    updateHighlightWarning();
                                     alert(highlightMode ? '高亮模式已启用，您可以开始选择文本来进行高亮显示。' : '高亮模式已关闭。');
                                 });
 
@@ -253,6 +279,8 @@
                                         if (highlightHistory.length === 0) {
                                             this.disabled = true;
                                         }
+                                        // 📌 撤销高亮后更新有效字数
+                                        updateWordCount();
                                     }
                                 });
 
@@ -260,6 +288,8 @@
                                     document.getElementById('contentArea').innerHTML = \`<div style="overflow-x:auto;">\${initialHTML}\</div>\`;
                                     highlightHistory = [];
                                     document.getElementById('undoButton').disabled = true;
+                                    // 📌 重新加载后更新有效字数
+                                    updateWordCount();
                                 });
                             })();
                         <\/script>
